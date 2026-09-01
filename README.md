@@ -1,197 +1,516 @@
-# Local AI Gateway
+<div align="center">
 
-A self-hosted stack that lets VS Code (or any client) talk to local models running
-in Ollama through one gateway that owns conversation history, permissions, and
-model routing.
+<a href="https://github.com/">
+  <img src="dashboard/ModelForge.png" alt="ModelForge" width="520">
+</a>
 
+# ModelForge
+
+### Your Local AI Development Workspace
+
+**Run local models. Build projects. Give agents controlled access to your files. Keep your data on your machine.**
+
+<p>
+  <img src="https://img.shields.io/badge/status-early%20development-6C63FF?style=for-the-badge" alt="Early Development">
+  <img src="https://img.shields.io/badge/Ollama-local%20LLM-111827?style=for-the-badge" alt="Ollama">
+  <img src="https://img.shields.io/badge/Spring%20Boot-3-6DB33F?style=for-the-badge&logo=springboot&logoColor=white" alt="Spring Boot 3">
+  <img src="https://img.shields.io/badge/Java-17-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 17">
+  <img src="https://img.shields.io/badge/Node.js-18%2B-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js 18+">
+</p>
+
+<p>
+  <a href="#-why-modelforge">Why ModelForge</a> ·
+  <a href="#-features">Features</a> ·
+  <a href="#-quickstart">Quickstart</a> ·
+  <a href="#-architecture">Architecture</a> ·
+  <a href="#-roadmap">Roadmap</a>
+</p>
+
+</div>
+
+---
+
+## 🧠 Why ModelForge?
+
+ModelForge is a **self-hosted, local-first AI workspace** built around Ollama.
+
+Instead of giving an AI agent unrestricted access to your machine, ModelForge puts a gateway between your client and local models. The gateway owns **conversation history, projects, permissions, model routing, and tool activity**.
+
+The goal is simple:
+
+> **Give local AI the context it needs — without giving it more access than it needs.**
+
+It currently provides a working foundation that can be run locally today and expanded incrementally.
+
+---
+
+## ✨ Features
+
+| Feature | What it does |
+|---|---|
+| 💬 **Persistent Chat** | Conversations are stored locally and can be continued later. |
+| 🗂️ **Projects** | Organize conversations around individual repositories/workspaces. |
+| 🤖 **Ollama Models** | Discover and chat with models available through your local Ollama instance. |
+| 🛡️ **Permission Engine** | Decide whether agent tools should `ALLOW`, `DENY`, or `ASK` before execution. |
+| 🧰 **Agent Runtime** | Node.js CLI that can call tools such as reading, writing, and listing files. |
+| ⚡ **Agent Activity** | Keep an audit trail of tool calls and their results. |
+| 💾 **Local Persistence** | H2 is the default database; PostgreSQL is supported through a Spring profile. |
+| 🎨 **Dashboard** | Lightweight vanilla HTML/CSS/JS interface with no frontend build step. |
+| 🐳 **Docker Support** | Run Ollama alone today or use the full Docker stack as the project grows. |
+
+---
+
+## 🏗️ Architecture
+
+```text
+                    ┌─────────────────────────┐
+                    │       VS Code / CLI     │
+                    │       / Dashboard       │
+                    └────────────┬────────────┘
+                                 │
+                                 ▼
+                    ┌─────────────────────────┐
+                    │     Agent Runtime       │
+                    │ context · tools · plan   │
+                    │ file operations          │
+                    └────────────┬────────────┘
+                                 │
+                                 ▼
+              ┌─────────────────────────────────────┐
+              │          ModelForge Gateway          │
+              │                                     │
+              │  API / Auth                         │
+              │  Conversation Service              │
+              │  Permission Engine                 │
+              │  Model Router                      │
+              └──────────────┬───────────┬──────────┘
+                             │           │
+                ┌────────────▼─────┐ ┌──▼───────────┐
+                │   PostgreSQL /   │ │    Ollama    │
+                │   H2 Persistence  │ │ Local Models │
+                └──────────────────┘ └──────────────┘
+                             ▲
+                             │
+                    ┌────────┴────────┐
+                    │    Dashboard    │
+                    │ chats · projects│
+                    │ permissions     │
+                    │ activity · models│
+                    └─────────────────┘
 ```
-VS Code (local/Codespace)
-        │
-        ▼
-Agent Runtime (context, tools, planning, file ops)
-        │
-        ▼
-Local AI Gateway — Spring Boot (API/Auth, Conversation Service, Permission Engine, Model Router)
-        │                                   │
-        ▼                                   ▼
-   PostgreSQL                            Ollama (Qwen, Llama, Mistral, ...)
-(conversations, messages, projects,
- permissions, tool events)
-        ▲
-        │
-   Dashboard (chat history, search, projects, permissions, agent activity, models)
+
+### Current runtime path
+
+For the minimal setup:
+
+```text
+Dashboard
+    │
+    ▼
+Spring Boot Gateway
+    │
+    ├── H2 file database
+    │
+    └── Ollama API
 ```
 
-This repo is a **minimal but working** version of that diagram, built so you can
-run it today and grow it incrementally.
+No external database is required for the default development setup.
 
-## What's included
+---
 
-| Piece | Tech | Status |
-|---|---|---|
-| Local AI Gateway | Spring Boot 3 / Java 17 | REST API, JPA + H2 (Postgres profile ready), Ollama client, model router, permission engine |
-| Dashboard | Vanilla HTML/JS (no build step) | Chat, chat history, projects, permissions, agent activity, model list |
-| Agent Runtime | Node.js CLI | Calls the gateway, runs a tool-call loop (read/write/list files) with permission checks |
-| VS Code | — | Not built yet — for now, use the CLI agent runtime or the dashboard directly |
+## 🚀 Quickstart
 
-## Current setup: no Docker, no Postgres required
+### Requirements
 
-For daily use right now, the stack is deliberately minimal:
+- Java 17+
+- Maven
+- Ollama
+- Node.js 18+ if you want to use the agent runtime
+- Python 3 if you want to serve the static dashboard locally
 
-```
-Dashboard (static HTML/JS) ──► Gateway (Spring Boot + H2, file-based DB) ──► Ollama API
-```
+### 1. Start Ollama
 
-H2 stores data in a local file (`backend/data/local-ai-gateway.mv.db`) — no DB
-server to install or run. Postgres is still fully wired up behind a Spring
-profile for when you want it (see **Moving to Postgres later** below); nothing
-needs to be rewritten to switch.
-
-## Prerequisites
-
-- Java 17 + Maven
-- [Ollama](https://ollama.com) installed natively, **or** run it via
-  `docker compose up -d` (uses the minimal `docker-compose.yml`, which now
-  only runs Ollama)
-- Node.js 18+ if you want to use the agent runtime CLI
-
-## Quickstart
+Use a native Ollama installation:
 
 ```bash
-# 1. Ollama - either:
-ollama serve                          # if installed natively
-#   or
-docker compose up -d                  # starts just the Ollama container
+ollama serve
+```
 
-ollama pull qwen2.5:7b                # (or `docker exec -it local-ai-ollama ollama pull qwen2.5:7b`)
+Or start the project's minimal Ollama container:
 
-# 2. Backend (H2 is the default profile - nothing else to configure)
+```bash
+docker compose up -d
+```
+
+Then pull a model:
+
+```bash
+ollama pull qwen2.5:7b
+```
+
+If Ollama is running inside Docker:
+
+```bash
+docker exec -it local-ai-ollama ollama pull qwen2.5:7b
+```
+
+### 2. Start the gateway
+
+```bash
 cd backend
 mvn spring-boot:run
-# gateway listening on http://localhost:8080
-
-# 3. Dashboard - just serve the static folder
-cd ../dashboard
-python3 -m http.server 8081
-# open http://localhost:8081
 ```
 
-That's it — three processes, no database to install. The H2 console is
-available at `http://localhost:8080/h2-console` if you want to poke at the
-data directly (JDBC URL: `jdbc:h2:file:./data/local-ai-gateway`).
+The gateway will be available at:
 
-## Moving to Postgres later
+```text
+http://localhost:8080
+```
 
-When you're ready:
+### 3. Start the dashboard
 
 ```bash
-docker compose -f docker-compose.full.yml up -d postgres
-cd backend
-mvn spring-boot:run -Dspring-boot.run.profiles=postgres
+cd dashboard
+python3 -m http.server 8081
 ```
 
-The `postgres` Spring profile in `application.yml` has the connection details
-(overridable with `DB_HOST`/`DB_PORT`/`DB_NAME`/`DB_USER`/`DB_PASSWORD`). Same
-entities, same API, same dashboard — only the datasource changes.
-`docker-compose.full.yml` also has the fully containerized version (backend +
-dashboard + postgres + ollama) for whenever you want everything in Docker.
+Open:
 
-## Using the agent runtime (CLI, stands in for the VS Code extension for now)
+```text
+http://localhost:8081
+```
+
+That's it.
+
+**Three processes. No database server. No frontend build step.**
+
+---
+
+## 🤖 Using the Agent Runtime
+
+The Node.js CLI currently acts as the client-side agent runtime while the planned VS Code integration is being developed.
 
 ```bash
 cd agent-runtime
-npm install    # no dependencies yet, but keeps the workflow consistent
-GATEWAY_URL=http://localhost:8080 node agent.js --workspace /path/to/your/repo "list the files in src/"
 
-# or interactive mode
+npm install
+
+GATEWAY_URL=http://localhost:8080 \
+node agent.js \
+  --workspace /path/to/your/repo \
+  "list the files in src/"
+```
+
+Interactive mode:
+
+```bash
 node agent.js --workspace /path/to/your/repo
+```
+
+Then:
+
+```text
 > summarize what this repo does
 ```
 
-The agent runtime asks for approval (`[y/N]`) before running any tool that has
-no explicit `ALLOW`/`DENY` rule in the dashboard's Permissions tab — that's the
-Permission Engine in action end to end.
+### Permission flow
 
-## Daily-use workflow
+If a tool does not have an explicit permission rule, the runtime asks for approval:
 
-1. **Start the stack** — `ollama serve` (or `docker compose up -d` for just
-   Ollama), then `mvn spring-boot:run` in `backend/`, then serve `dashboard/`.
-2. **Open the dashboard** at `http://localhost:8081` to chat, or use the CLI
-   agent runtime from your project's terminal when you want file/tool access.
-3. **Create a Project** in the dashboard for each repo you work in — set its
-   default model and workspace path so you don't have to specify them every time.
-4. **Set permission rules** for tools you're comfortable automating
-   (e.g. `ALLOW` for `read_file`, `ASK` or `DENY` for `write_file` until you
-   trust the flow).
-5. **Review Agent Activity** periodically to see what tools were called, by
-   which conversation, and with what result — this is your audit trail.
-6. **Iterate on the backend** in `backend/src/main/java/com/localai/gateway/`
-   — the layout mirrors the architecture diagram 1:1 (`controller` = API,
-   `service` = Conversation Service / Permission Engine / Model Router,
-   `repository`/`model` = persistence).
+```text
+Tool requested: read_file
+Permission: ASK
 
-## Project structure
-
+Allow this operation? [y/N]
 ```
-local-ai-gateway/
-├── docker-compose.yml           # minimal: just Ollama
-├── docker-compose.full.yml      # postgres + ollama + backend + dashboard, for later
+
+You can configure tool behavior in the dashboard:
+
+```text
+ALLOW   → execute automatically
+DENY    → reject automatically
+ASK     → request approval
+```
+
+This is the core security idea behind ModelForge.
+
+---
+
+## 🛡️ Permissions
+
+ModelForge is designed around the principle of **least privilege** for local AI agents.
+
+For example:
+
+```text
+read_file       → ALLOW
+list_dir        → ALLOW
+write_file      → ASK
+run_command     → DENY
+```
+
+The current permission engine supports rules at the tool/project level.
+
+> **Important:** `pathScope` exists in the current permission model but is not yet enforced. Granular filesystem/path-based permission enforcement is part of the planned work.
+
+---
+
+## 💾 Data & Persistence
+
+The default configuration uses **H2 as a file-based SQL database**.
+
+Data is stored under:
+
+```text
+backend/data/
+```
+
+This means conversations persist across restarts without requiring PostgreSQL.
+
+PostgreSQL is also wired up through the Spring `postgres` profile for a more scalable setup.
+
+### PostgreSQL
+
+```bash
+docker compose -f docker-compose.full.yml up -d postgres
+
+cd backend
+
+mvn spring-boot:run \
+  -Dspring-boot.run.profiles=postgres
+```
+
+The PostgreSQL connection can be overridden with:
+
+```text
+DB_HOST
+DB_PORT
+DB_NAME
+DB_USER
+DB_PASSWORD
+```
+
+---
+
+## 📁 Project Structure
+
+```text
+ModelForge/
+├── docker-compose.yml
+├── docker-compose.full.yml
 ├── .env.example
-├── backend/                    # Local AI Gateway (Spring Boot)
+├── backend/
 │   ├── pom.xml
 │   └── src/main/java/com/localai/gateway/
 │       ├── GatewayApplication.java
-│       ├── config/              # CORS etc.
-│       ├── controller/          # REST API — Chat, Conversations, Projects,
-│       │                        #   Permissions, ToolEvents, Models
-│       ├── service/              # ConversationService, ModelRouterService,
-│       │                        #   PermissionService, OllamaClient
-│       ├── repository/           # Spring Data JPA repositories
-│       ├── model/                # Project, Conversation, Message,
-│       │                        #   Permission, ToolEvent entities
-│       └── dto/                  # request/response payloads
-├── dashboard/                   # static HTML/JS/CSS, no build step
+│       ├── config/
+│       ├── controller/
+│       ├── service/
+│       ├── repository/
+│       ├── model/
+│       └── dto/
+│
+├── dashboard/
 │   ├── index.html
 │   ├── app.js
 │   └── styles.css
-└── agent-runtime/                # Node CLI standing in for the VS Code side
+│
+└── agent-runtime/
     ├── package.json
     └── agent.js
 ```
 
-## API surface (v0)
+### Backend layers
 
-- `POST /api/chat` — send a message, get a reply; creates a conversation if `conversationId` is omitted
-- `GET /api/conversations`, `GET /api/conversations/{id}`, `DELETE /api/conversations/{id}`
-- `GET/POST/PUT/DELETE /api/projects`
-- `GET/POST/PUT/DELETE /api/permissions`, `GET /api/permissions/check?toolName=&projectId=`
-- `GET/POST/PUT /api/tool-events`
-- `GET /api/models` — proxies Ollama's `/api/tags`
+```text
+controller/
+    REST API
 
-## Ideas to make this more useful (roughly in order of impact)
+service/
+    Conversation Service
+    Permission Service
+    Model Router
+    Ollama Client
 
-**Near-term, high value**
-- **Streaming responses** — switch `/api/chat` to Server-Sent Events or WebSocket so the dashboard shows tokens as they arrive instead of waiting for the full reply (biggest UX win for local models, which are slower than hosted ones).
-- **Auth** — even a single shared API key/JWT on the gateway, since right now anything on your network can call it.
-- **Structured tool calling** — Ollama's newer models support native function calling; moving off the "reply with JSON" convention in `agent.js` would be more reliable than string parsing.
-- **Conversation titles via the model** — auto-generate a better title after the first exchange instead of truncating the first message.
+repository/
+    Spring Data JPA
 
-**Makes it genuinely more capable**
-- **RAG over your codebase** — add `pgvector` to Postgres, embed files with a local embedding model, and give the agent a `search_codebase` tool instead of relying on `read_file`/`list_dir` alone.
-- **More tools** — `run_command` (sandboxed!), `apply_patch`/`git_diff` so the agent proposes diffs instead of overwriting files outright, `search_web`.
-- **Model fallback chains** — if the primary model errors or is unavailable, the Model Router retries with a fallback model automatically.
-- **Approval queue in the dashboard** — instead of `[y/N]` in the terminal, "ASK" tool calls show up in the dashboard for you to approve/deny from anywhere, with the agent runtime polling for the decision.
+model/
+    Project
+    Conversation
+    Message
+    Permission
+    ToolEvent
 
-**Nice quality-of-life**
-- **Conversation search** — full-text search over `messages.content` (Postgres `tsvector` is enough at this scale).
-- **Usage/cost dashboard** — token counts and wall-clock latency per model, useful for comparing Qwen vs. Llama vs. Mistral on your hardware.
-- **Export conversation to Markdown** — one click from the dashboard.
-- **Prompt template library** — saved system prompts per project (e.g. "code reviewer", "test writer") selectable from the chat header.
-- **VS Code extension** — thin wrapper that reuses the same `/api/chat` contract but sends real editor context (open file, selection, workspace root) instead of CLI args; this is the natural next milestone toward the original diagram.
+dto/
+    API request / response models
+```
 
-## Notes on this minimal version
+The backend structure intentionally mirrors the architecture.
 
-- Default DB is **H2**, file-based, in `backend/data/`. It's a real SQL database (not in-memory-only), so your conversations persist across restarts — just not concurrent-writer-safe the way Postgres is, which is why it's a stepping stone rather than the long-term choice.
-- `spring.jpa.hibernate.ddl-auto: update` auto-creates tables on first run — fine for a personal/dev tool, swap for Flyway/Liquibase migrations before this becomes multi-user or production-facing (matters more once you're on Postgres).
-- The Permission Engine currently supports one rule per (tool, project) pair with `ALLOW`/`DENY`/`ASK`; `pathScope` exists on the entity but isn't enforced yet — glob-matching it against tool args is a good first contribution.
-- The agent runtime's tool loop is unbounded — add a max-turns guard before pointing it at anything you don't want to babysit.
+---
+
+## 🔌 API
+
+Current API surface:
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `POST` | `/api/chat` | Send a message and receive a model reply |
+| `GET` | `/api/conversations` | List conversations |
+| `GET` | `/api/conversations/{id}` | Open a conversation |
+| `DELETE` | `/api/conversations/{id}` | Delete a conversation |
+| `GET` | `/api/projects` | List projects |
+| `POST` | `/api/projects` | Create a project |
+| `PUT` | `/api/projects/{id}` | Update a project |
+| `DELETE` | `/api/projects/{id}` | Delete a project |
+| `GET` | `/api/permissions` | List permission rules |
+| `POST` | `/api/permissions` | Create a permission rule |
+| `PUT` | `/api/permissions/{id}` | Update a permission |
+| `DELETE` | `/api/permissions/{id}` | Delete a permission |
+| `GET` | `/api/permissions/check` | Check a tool permission |
+| `GET` | `/api/tool-events` | List agent/tool activity |
+| `POST` | `/api/tool-events` | Record a tool event |
+| `PUT` | `/api/tool-events/{id}` | Update a tool event |
+| `GET` | `/api/models` | List models available in Ollama |
+
+---
+
+## 🧭 Daily Workflow
+
+A typical workflow looks like this:
+
+1. Start Ollama.
+2. Start the ModelForge gateway.
+3. Open the dashboard.
+4. Create a project for the repository you're working on.
+5. Select its default model and workspace path.
+6. Configure tool permissions.
+7. Chat with your local model.
+8. Use the CLI agent runtime when file/tool access is needed.
+9. Review **Agent Activity** to see what tools were called and what happened.
+
+---
+
+## 🗺️ Roadmap
+
+ModelForge is intentionally being built incrementally.
+
+### 🔥 Near-term
+
+- [ ] Streaming responses with SSE/WebSockets
+- [ ] Gateway authentication
+- [ ] Structured Ollama function/tool calling
+- [ ] Model-generated conversation titles
+- [ ] Better dashboard UX
+- [ ] More robust error handling
+
+### 🧠 Agent capabilities
+
+- [ ] Granular filesystem/path permissions
+- [ ] Sandboxed `run_command`
+- [ ] `apply_patch` / `git_diff`
+- [ ] Approval queue in the dashboard
+- [ ] Search codebase tool
+- [ ] More agent tools
+- [ ] Model fallback chains
+
+### 🔎 Knowledge
+
+- [ ] PostgreSQL + `pgvector`
+- [ ] Local embeddings
+- [ ] RAG over project codebases
+- [ ] Conversation search
+- [ ] Prompt template library
+
+### 🧩 Integrations
+
+- [ ] VS Code extension
+- [ ] Real editor context
+- [ ] Workspace-aware agent sessions
+
+### 📊 Observability
+
+- [ ] Token usage
+- [ ] Latency metrics
+- [ ] Model comparison dashboard
+- [ ] Better agent execution logs
+- [ ] Export conversations to Markdown
+
+---
+
+## 🔐 Security Notes
+
+ModelForge is currently a **local development tool**, not a production-ready multi-user platform.
+
+Important current limitations:
+
+- The gateway does not yet have authentication.
+- Anything that can reach the gateway may be able to call its API.
+- `pathScope` is present in the data model but is not currently enforced.
+- The agent tool loop currently needs a maximum-turns guard.
+- H2 is intended as a simple development database rather than a concurrent production datastore.
+- Before exposing the gateway beyond your local machine, add authentication and review the tool permission model carefully.
+
+These limitations are documented intentionally so the project can evolve toward a safer architecture rather than hiding the current boundaries.
+
+---
+
+## 🤝 Contributing
+
+ModelForge is still early, so contributions, ideas, testing, and feedback are especially useful.
+
+Good areas to contribute:
+
+```text
+🛡️ Permission enforcement
+🤖 Agent tooling
+🔌 Ollama integration
+🎨 Dashboard UX
+🧠 RAG / code search
+🧩 VS Code integration
+📊 Observability
+📚 Documentation
+🧪 Tests
+```
+
+If you're new to the project, look for issues labeled:
+
+```text
+good first issue
+help wanted
+```
+
+---
+
+## ⭐ Support the Project
+
+If ModelForge is useful to you:
+
+-  Star the repository
+-  Report bugs
+-  Suggest features
+-  Submit improvements
+-  Share it with other local-AI developers
+
+Every star and contribution helps the project grow.
+
+---
+
+##  License
+
+Add your project's chosen open-source license here.
+
+If you plan to publish ModelForge publicly, adding a real `LICENSE` file is recommended before the first major release.
+
+---
+
+<div align="center">
+
+### ModelForge
+
+**Local models. Real projects. Controlled agents.**
+
+Built for developers who want AI that runs where their code lives.
+
+</div>
