@@ -1,0 +1,50 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: local-ai-gateway
+
+  # Default profile: H2, file-based, zero external setup. Good for day-to-day
+  # local use while you're iterating - no DB server to install or run.
+  datasource:
+    url: jdbc:h2:file:${DB_FILE_PATH:./data/local-ai-gateway};AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+localai:
+  ollama:
+    base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+    default-model: ${OLLAMA_DEFAULT_MODEL:qwen2.5:7b}
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:8081}
+
+---
+# Postgres profile - switch to this once you're ready to move off H2.
+# Run with: mvn spring-boot:run -Dspring-boot.run.profiles=postgres
+spring:
+  config:
+    activate:
+      on-profile: postgres
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:local_ai_gateway}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update

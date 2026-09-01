@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1"
+  />
+
+  <meta
+          name="description"
+          content="Local AI Gateway Dashboard for Ollama"
+  />
+
+  <title>ModelForge — Dashboard</title>
+  <link rel="icon" href="ModelForge.png" type="image/png">
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+<div class="app">
+
+  <!-- =====================================================
+       SIDEBAR
+       ===================================================== -->
+
+  <aside class="sidebar">
+
+    <!-- Brand -->
+    <div class="brand">
+      <div class="brand-mark">
+        <span></span>
+      </div>
+
+      <div class="brand-text">
+        <h1>ModelForge</h1>
+        <p>Ollama Dashboard</p>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="main-nav">
+
+      <div class="nav-section-title">
+        Workspace
+      </div>
+
+      <button
+              class="nav-btn active"
+              data-tab="chat"
+              type="button"
+      >
+        <span class="nav-icon">💬</span>
+        <span>Chat</span>
+      </button>
+
+      <button
+              class="nav-btn"
+              data-tab="conversations"
+              type="button"
+      >
+        <span class="nav-icon">◷</span>
+        <span>Chat History</span>
+      </button>
+
+      <button
+              class="nav-btn"
+              data-tab="projects"
+              type="button"
+      >
+        <span class="nav-icon">▣</span>
+        <span>Projects</span>
+      </button>
+
+      <div class="nav-section-title">
+        Agent
+      </div>
+
+      <button
+              class="nav-btn"
+              data-tab="permissions"
+              type="button"
+      >
+        <span class="nav-icon">⌘</span>
+        <span>Permissions</span>
+      </button>
+
+      <button
+              class="nav-btn"
+              data-tab="activity"
+              type="button"
+      >
+        <span class="nav-icon">⚡</span>
+        <span>Agent Activity</span>
+      </button>
+
+      <div class="nav-section-title">
+        System
+      </div>
+
+      <button
+              class="nav-btn"
+              data-tab="models"
+              type="button"
+      >
+        <span class="nav-icon">✦</span>
+        <span>Models</span>
+      </button>
+
+    </nav>
+
+    <!-- Sidebar Bottom -->
+    <div class="sidebar-bottom">
+
+      <!-- Theme -->
+      <button
+              id="themeToggle"
+              class="theme-toggle"
+              type="button"
+      >
+        <span class="theme-icon">☀️</span>
+
+        <span class="theme-toggle-content">
+            <span class="theme-label">Light mode</span>
+            <span class="theme-description">
+              Switch appearance
+            </span>
+          </span>
+      </button>
+
+      <!-- Gateway -->
+      <div class="gateway-url">
+
+        <div class="gateway-header">
+          <span class="gateway-status"></span>
+
+          <label for="gatewayUrl">
+            Gateway URL
+          </label>
+        </div>
+
+        <input
+                id="gatewayUrl"
+                value="http://localhost:8080"
+                spellcheck="false"
+                autocomplete="off"
+        />
+
+      </div>
+
+    </div>
+
+  </aside>
+
+
+  <!-- =====================================================
+       MAIN CONTENT
+       ===================================================== -->
+
+  <main class="content">
+
+    <!-- ===================================================
+         CHAT
+         =================================================== -->
+
+    <section
+            id="tab-chat"
+            class="tab active"
+    >
+
+      <div class="page-header chat-page-header">
+
+        <div>
+          <div class="eyebrow">
+            LOCAL AI
+          </div>
+
+          <h2>Chat</h2>
+
+          <p class="page-description">
+            Talk to your local Ollama models through the gateway.
+          </p>
+        </div>
+
+        <div class="connection-status">
+          <span class="status-dot"></span>
+          <span>Gateway</span>
+        </div>
+
+      </div>
+
+
+      <!-- Chat Controls -->
+      <div class="chat-header">
+
+        <div class="control-group">
+
+          <label for="chatProject">
+            Project
+          </label>
+
+          <select id="chatProject">
+            <option value="">
+              No project
+            </option>
+          </select>
+
+        </div>
+
+
+        <div class="control-group">
+
+          <label for="chatModel">
+            Model
+          </label>
+
+          <select id="chatModel">
+            <option value="">
+              Default model
+            </option>
+          </select>
+
+        </div>
+
+
+        <button
+                id="newChatBtn"
+                class="secondary-btn"
+                type="button"
+        >
+          <span>＋</span>
+          New chat
+        </button>
+
+      </div>
+
+
+      <!-- Chat -->
+      <div
+              id="chatLog"
+              class="chat-log"
+      ></div>
+
+
+      <!-- Composer -->
+      <form
+              id="chatForm"
+              class="chat-form"
+      >
+
+        <div class="composer-icon">
+          ✦
+        </div>
+
+        <textarea
+                id="chatInput"
+                placeholder="Ask your local AI anything..."
+                rows="2"
+                autocomplete="off"
+        ></textarea>
+
+        <button
+                type="submit"
+                class="send-btn"
+                aria-label="Send message"
+        >
+          <span>Send</span>
+          <span class="send-arrow">↑</span>
+        </button>
+
+      </form>
+
+      <div class="composer-hint">
+        <span>Local inference</span>
+        <span>•</span>
+        <span>Your data stays on your machine</span>
+      </div>
+
+    </section>
+
+
+    <!-- ===================================================
+         CHAT HISTORY
+         =================================================== -->
+
+    <section
+            id="tab-conversations"
+            class="tab"
+    >
+
+      <div class="page-header">
+
+        <div>
+          <div class="eyebrow">
+            WORKSPACE
+          </div>
+
+          <h2>Chat History</h2>
+
+          <p class="page-description">
+            Browse and continue previous conversations.
+          </p>
+        </div>
+
+      </div>
+
+      <div
+              id="conversationList"
+              class="list"
+      ></div>
+
+    </section>
+
+
+    <!-- ===================================================
+         PROJECTS
+         =================================================== -->
+
+    <section
+            id="tab-projects"
+            class="tab"
+    >
+
+      <div class="page-header">
+
+        <div>
+          <div class="eyebrow">
+            WORKSPACE
+          </div>
+
+          <h2>Projects</h2>
+
+          <p class="page-description">
+            Organize conversations, models and workspaces.
+          </p>
+        </div>
+
+      </div>
+
+
+      <form
+              id="projectForm"
+              class="inline-form"
+      >
+
+        <div class="form-field">
+          <label for="projectName">
+            Project name
+          </label>
+
+          <input
+                  id="projectName"
+                  placeholder="My AI Project"
+                  required
+          />
+        </div>
+
+
+        <div class="form-field">
+          <label for="projectModel">
+            Default model
+          </label>
+
+          <input
+                  id="projectModel"
+                  placeholder="qwen2.5:7b"
+          />
+        </div>
+
+
+        <div class="form-field form-field-wide">
+          <label for="projectWorkspace">
+            Workspace path
+          </label>
+
+          <input
+                  id="projectWorkspace"
+                  placeholder="/home/me/code/app"
+          />
+        </div>
+
+
+        <button
+                type="submit"
+                class="primary-btn"
+        >
+          <span>＋</span>
+          Add project
+        </button>
+
+      </form>
+
+
+      <div
+              id="projectList"
+              class="list"
+      ></div>
+
+    </section>
+
+
+    <!-- ===================================================
+         PERMISSIONS
+         =================================================== -->
+
+    <section
+            id="tab-permissions"
+            class="tab"
+    >
+
+      <div class="page-header">
+
+        <div>
+          <div class="eyebrow">
+            AGENT SECURITY
+          </div>
+
+          <h2>Permissions</h2>
+
+          <p class="page-description">
+            Control which tools your local agent can use automatically.
+          </p>
+        </div>
+
+      </div>
+
+
+      <div class="info-banner">
+
+        <div class="info-icon">
+          ✓
+        </div>
+
+        <div>
+          <strong>Safe by default</strong>
+
+          <p>
+            Rules control whether the agent runtime may run a tool
+            automatically. No rule means <strong>ASK</strong>.
+          </p>
+        </div>
+
+      </div>
+
+
+      <form
+              id="permissionForm"
+              class="inline-form"
+      >
+
+        <div class="form-field">
+          <label for="permToolName">
+            Tool name
+          </label>
+
+          <input
+                  id="permToolName"
+                  placeholder="write_file"
+                  required
+          />
+        </div>
+
+
+        <div class="form-field">
+          <label for="permDecision">
+            Decision
+          </label>
+
+          <select id="permDecision">
+            <option value="ASK">ASK</option>
+            <option value="ALLOW">ALLOW</option>
+            <option value="DENY">DENY</option>
+          </select>
+        </div>
+
+
+        <div class="form-field">
+          <label for="permProject">
+            Scope
+          </label>
+
+          <select id="permProject">
+            <option value="">
+              Global (all projects)
+            </option>
+          </select>
+        </div>
+
+
+        <button
+                type="submit"
+                class="primary-btn"
+        >
+          <span>＋</span>
+          Add rule
+        </button>
+
+      </form>
+
+
+      <div
+              id="permissionList"
+              class="list"
+      ></div>
+
+    </section>
+
+
+    <!-- ===================================================
+         AGENT ACTIVITY
+         =================================================== -->
+
+    <section
+            id="tab-activity"
+            class="tab"
+    >
+
+      <div class="page-header">
+
+        <div>
+          <div class="eyebrow">
+            AGENT RUNTIME
+          </div>
+
+          <h2>Agent Activity</h2>
+
+          <p class="page-description">
+            Monitor tool calls and agent execution events.
+          </p>
+        </div>
+
+        <div class="activity-live">
+          <span></span>
+          Activity log
+        </div>
+
+      </div>
+
+
+      <div
+              id="activityList"
+              class="list activity-list"
+      ></div>
+
+    </section>
+
+
+    <!-- ===================================================
+         MODELS
+         =================================================== -->
+
+    <section
+            id="tab-models"
+            class="tab"
+    >
+
+      <div class="page-header">
+
+        <div>
+          <div class="eyebrow">
+            OLLAMA
+          </div>
+
+          <h2>Models</h2>
+
+          <p class="page-description">
+            Models currently available through your local Ollama instance.
+          </p>
+        </div>
+
+      </div>
+
+
+      <div class="models-header">
+        <div class="models-status">
+          <span class="status-dot"></span>
+          Ollama models
+        </div>
+      </div>
+
+
+      <div
+              id="modelList"
+              class="list model-list"
+      ></div>
+
+    </section>
+
+  </main>
+
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>

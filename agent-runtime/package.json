@@ -1,0 +1,14 @@
+{
+  "name": "local-ai-agent-runtime",
+  "version": "0.1.0",
+  "description": "Minimal agent runtime: reads context, calls the Local AI Gateway, executes permitted tools, and loops until the model gives a final answer.",
+  "type": "module",
+  "main": "agent.js",
+  "bin": {
+    "local-agent": "./agent.js"
+  },
+  "scripts": {
+    "start": "node agent.js"
+  },
+  "license": "MIT"
+}

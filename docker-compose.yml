@@ -1,0 +1,21 @@
+# Minimal setup for now: just Ollama. The backend runs natively with H2
+# (mvn spring-boot:run) and the dashboard is a static site you open directly
+# or serve with any static file server - no Postgres/Docker needed for those yet.
+#
+# Once you're ready to move to Postgres + containerize everything, use
+# docker-compose.full.yml instead (backend + dashboard + postgres + ollama).
+#
+# If you already have Ollama installed natively, you don't need this file at
+# all - just run `ollama serve` and skip straight to the backend.
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: local-ai-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  ollama_data:
