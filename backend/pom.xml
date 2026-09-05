@@ -13,7 +13,7 @@
 
   <groupId>com.localai</groupId>
   <artifactId>gateway</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.0-SNAPSHOT</version>
   <name>local-ai-gateway</name>
   <description>Local AI Gateway - conversation, permission, and model routing service</description>
 
@@ -42,6 +42,7 @@
   </dependencies>
 
   <build>
+    <finalName>gateway</finalName>
     <plugins>
       <plugin>
         <groupId>org.springframework.boot</groupId>
