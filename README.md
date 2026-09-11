@@ -29,7 +29,8 @@
 </div>
 
 ---
-
+![ModelForge Preview](dashboard/git.gif)
+---
 ## 🧠 Why ModelForge?
 
 ModelForge is a **self-hosted, local-first AI workspace** built around Ollama.
